@@ -70,7 +70,8 @@ class Sampler:
             self.trainadj_cache[normalization] = r_adj
         fea = self._preprocess_fea(self.train_features, cuda)
         return r_adj, fea
-
+    
+    
     def randomedge_sampler(self, percent, normalization, cuda):
         """
         Randomly drop edge and preserve percent% edges.
@@ -87,6 +88,45 @@ class Sampler:
                                (self.train_adj.row[perm],
                                 self.train_adj.col[perm])),
                               shape=self.train_adj.shape)
+        
+        
+        """
+        # Addition -------------------------------------------------
+        print("This is for Random Edge Addition and Dropping\n")
+        count = 1000
+        perm = np.random.permutation(r_adj.nnz)
+        perm = perm[count:]
+        r_adj = sp.coo_matrix((r_adj.data[perm],
+                               (r_adj.row[perm],
+                                r_adj.col[perm])),
+                              shape=self.train_adj.shape)
+      
+        idx = 0
+        while (True):
+            if idx==count:
+               break
+            pair = np.random.randint(self.train_adj.shape[0], size=2)
+            #print("Row {} and column {}".format(pair[0], pair[1]))
+            if pair[0] in r_adj.row and pair[1] in r_adj.col:
+               pass
+            else:
+               r_adj.row = np.concatenate(([pair[0]], r_adj.row))
+               r_adj.col = np.concatenate(([pair[1]], r_adj.col))
+               idx = idx+1
+            
+            
+         
+        r_adj.data = np.concatenate((np.ones(count), r_adj.data))
+        
+        #------------------------------------------------------------
+        array = r_adj.toarray()
+        def check_symmetric(a, rtol=1e-05, atol=1e-08):
+            return np.allclose(a, a.T, rtol=rtol, atol=atol)
+            
+        #print(check_symmetric(self.train_adj.toarray()))
+        #-----------------------------------------------------------
+        """
+        
         r_adj = self._preprocess_adj(normalization, r_adj, cuda)
         fea = self._preprocess_fea(self.train_features, cuda)
         return r_adj, fea
